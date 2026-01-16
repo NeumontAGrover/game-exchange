@@ -1,0 +1,10 @@
+server:
+  port: 3000
+
+database:
+  protocol: postgres
+  user: arthur
+  password: retroexchange
+  host: localhost
+  port: 55000
+  hashingMethod: bcrypt

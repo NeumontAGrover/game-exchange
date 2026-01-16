@@ -1,0 +1,573 @@
+# YAML file was made in conjunction with GitHub Copilot
+# Only inline generation was used for repetative sections and to speed up development
+
+openapi: "3.1.1"
+info:
+  title: Game Exchange API
+  version: "1.0"
+  description: API endpoints for adding and managing a list of retro games!
+servers:
+  - url: http://localhost:3000
+components:
+  schemas:
+    User:
+      description: A user object
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - streetAddress
+      properties:
+        name:
+          description: The name of the user
+          type: string
+        email:
+          description: The email of the user
+          type: string
+        password:
+          description: The password of the user
+          type: string
+        streetAddress:
+          description: The street address of the user
+          type: string
+      example:
+        name: John Baker
+        email: john.baker@example.com
+        password: examplePassword123
+        streetAddress: 123 Main St, Hometown, HT 12345
+    UserPartial:
+      description: A user object that has all optional fields
+      type: object
+      properties:
+        name:
+          description: The name of the user
+          type: string
+        email:
+          description: The email of the user
+          type: string
+        password:
+          description: The password of the user
+          type: string
+        streetAddress:
+          description: The street address of the user
+          type: string
+      example:
+        name: John Baker
+        streetAddress: 123 Main St, Hometown, HT 12345
+    LoginUser:
+      description: Parts of a user object that are required for login
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          description: The email of the user
+          type: string
+        password:
+          description: The password of the user
+          type: string
+      example:
+        email: Janette
+        password: anotherExamplePassword456
+    UserToken:
+      description: An object that contains a bearer token
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          description: The bearer token for the user
+          type: string
+      example:
+        token: "550e8400-e29b-41d4-a716-446655440000"
+    Game:
+      description: A game object
+      type: object
+      required:
+        - name
+        - publisher
+        - year
+        - platforms
+        - condition
+      properties:
+        name:
+          description: Name of the game
+          type: string
+        publisher:
+          description: Who the game was published by
+          type: string
+        year:
+          description: The year the game was released
+          type: integer
+        platforms:
+          description: The platforms that this game is available on
+          type: array
+          items:
+            type: string
+        condition:
+          description: The condition the physical game cartridge is in (mint, good, fair, poor)
+          type: string
+        previousOwners:
+          description: The number of previous owners of this game
+          type: integer
+      example:
+        name: The Legend of Zelda Ocarina of Time
+        publisher: Nintendo
+        year: 1998
+        platforms:
+          - N64
+          - GameCube
+        condition: good
+        previousOwners: 2
+    GamePartial:
+      description: A game object that has all optional fields
+      type: object
+      properties:
+        name:
+          description: Name of the game
+          type: string
+        publisher:
+          description: Who the game was published by
+          type: string
+        year:
+          description: The year the game was released
+          type: integer
+        platforms:
+          description: The platforms that this game is available on
+          type: array
+          items:
+            type: string
+        condition:
+          description: The condition the physical game cartridge is in
+          type: string
+        previousOwners:
+          description: The number of previous owners of this game
+          type: integer
+      example:
+        name: The Legend of Zelda Ocarina of Time
+        publisher: Nintendo
+        year: 1998
+        platforms:
+          - N64
+          - GameCube
+        condition: good
+        previousOwners: 2
+    InvalidFieldError:
+      description: An error that can occur due to empty bodies or invalid fields
+      type: object
+      required:
+        - message
+        - field
+        - value
+      properties:
+        message:
+          type: string
+        field:
+          description: The field that caused the error
+          type: string
+        value:
+          description: The invalid value provided
+          type: string
+      example:
+        message: "Invalid value for field"
+        field: "email"
+        value: "undefined"
+    UnauthorizedError:
+      description: An error that occurs from invalid access or invalid login
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+      example:
+        message: "Invalid email or password"
+    NotFoundError:
+      description: An error that occurs when a requested resource is not found
+      type: object
+      required:
+        - message
+        - triedID
+      properties:
+        message:
+          type: string
+        triedID:
+          description: The ID that was not found
+          type: number
+      example:
+        message: "Game was not found"
+        triedID: 100
+    AlreadyExistsError:
+      description: An error that occurs when a collision happens with resources
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+      example:
+        message: "User with that email already exists"
+    InternalServerError:
+      description: An error that occurs from an internal server issue
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+      example:
+        message: "Something went wrong with the server"
+  parameters:
+    GameID:
+      name: ID
+      description: The ID of a game
+      in: path
+      required: true
+      schema:
+        type: number
+      example: 1373
+    UserID:
+      name: ID
+      description: The ID of a user
+      in: path
+      required: true
+      schema:
+        type: number
+      example: 42
+    AuthToken:
+      name: Authorization
+      description: Bearer token for user authentication
+      in: header
+      required: true
+      schema:
+        type: string
+      example: "Bearer 550e8400-e29b-41d4-a716-446655440000"
+paths:
+  /user:
+    put:
+      summary: Login as a user
+      description: Logs the user in with the email and password and it gives a new token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginUser"
+            example:
+              email: john.baker@example.com
+              password: examplePassword123
+      responses:
+        "200":
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserToken"
+        "400":
+          description: Invalid user field or missing body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidFieldError"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    post:
+      summary: Registers a new user
+      description: Inserts a new user into the database
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+            example:
+              name: John Baker
+              email: john@thebaker.com
+              password: somethingsecure
+              streetAddress: 123 Baker St, Bakersville, BK 12345
+      responses:
+        "201":
+          description: User Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserToken"
+        "400":
+          description: Invalid user field or missing body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidFieldError"
+        "409":
+          description: User with that email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlreadyExistsError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    patch:
+      summary: Update user info
+      description: name, and street address can be updated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserPartial"
+      parameters:
+        - $ref: "#/components/parameters/UserID"
+        - $ref: "#/components/parameters/AuthToken"
+      responses:
+        "200":
+          description: User details updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: "User details updated successfully"
+        "204":
+          description: Body is empty
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: "No fields to update"
+        "400":
+          description: Problem parsing body or invalid user field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidFieldError"
+        "401":
+          description: Missing bearer token or token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /game:
+    post:
+      summary: Add a new game to exchange
+      description: Adds a new retro game to the exchange collection
+      parameters:
+        - $ref: "#/components/parameters/AuthToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Game"
+      responses:
+        "201":
+          description: Game Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid game field or missing body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidFieldError"
+        "401":
+          description: The user is not authorized or is missing a token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /game/{id}:
+    get:
+      summary: Get game info
+      description: Get info from a game with the specified ID
+      parameters:
+        - $ref: "#/components/parameters/GameID"
+        - $ref: "#/components/parameters/AuthToken"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: The user is not authorized to view games
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    put:
+      summary: Replace all properties of a game
+      description: Updates the entire game provided by the ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Game"
+      parameters:
+        - $ref: "#/components/parameters/GameID"
+        - $ref: "#/components/parameters/AuthToken"
+      responses:
+        "200":
+          description: Updated game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: User is not authorized to update this game or has a missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "400":
+          description: Invalid game field or missing body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidFieldError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    patch:
+      summary: Update some attributes of a game
+      description: Updates the provided fields of a game
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GamePartial"
+      parameters:
+        - $ref: "#/components/parameters/GameID"
+        - $ref: "#/components/parameters/AuthToken"
+      responses:
+        "200":
+          description: Updated game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "204":
+          description: Body is empty
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Invalid game field or missing body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidFieldError"
+        "401":
+          description: User is not authorized to update this game or has a missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Delete a game
+      description: Delete a game with the provided ID
+      parameters:
+        - $ref: "#/components/parameters/GameID"
+        - $ref: "#/components/parameters/AuthToken"
+      responses:
+        "200":
+          description: Deleted Game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: User is not authorized to delete this game or has a missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
