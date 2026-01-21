@@ -21,7 +21,7 @@ export namespace Auth {
 
   export async function loginUser(
     email: string,
-    password: string
+    password: string,
   ): Promise<string | null> {
     const user = await Postgres.getUserIDAndPasswordHash(email);
     if (!user) return null;
@@ -36,7 +36,7 @@ export namespace Auth {
   }
 
   export async function getBearerToken(
-    authString: string | null
+    authString: string | null,
   ): Promise<string | null> {
     if (!authString) return null;
 
@@ -54,7 +54,7 @@ export namespace Auth {
 
   export async function userOwnsGame(
     userID: number,
-    gameID: number
+    gameID: number,
   ): Promise<boolean> {
     const ownerID = await Postgres.getGameOwnerID(gameID);
     if (!ownerID) return false;
@@ -74,12 +74,14 @@ export namespace Auth {
 
   async function verifyPassword(
     password: string,
-    hashedPassword: string
+    hashedPassword: string,
   ): Promise<boolean> {
     return Bun.password.verify(
       password,
       hashedPassword,
-      database.hashingMethod
+      database.hashingMethod,
     );
   }
 }
+
+export default Auth;

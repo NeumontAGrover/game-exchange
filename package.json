@@ -11,7 +11,7 @@
     "typescript": "^5"
   },
   "scripts": {
-    "dev": "bun run index.ts",
-    "openapi-ts": "openapi-ts -i apidoc.yml -o ./types"
+    "dev": "bun run ./src/index.ts",
+    "openapi-ts": "openapi-ts -i apidoc.yml -o ./src/types"
   }
 }

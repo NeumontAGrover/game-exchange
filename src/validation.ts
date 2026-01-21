@@ -93,7 +93,7 @@ export namespace Validation {
 
   export function validateLogin(
     email: string,
-    password: string
+    password: string,
   ): InvalidField | null {
     const invalidEmail = validateEmail(email);
     if (invalidEmail) return invalidEmail;
@@ -125,3 +125,5 @@ export namespace Validation {
     return null;
   }
 }
+
+export default Validation;

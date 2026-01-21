@@ -7,7 +7,7 @@ import config from "./config.yml";
 
 const database = config.database;
 const pg = new SQL(
-  `${database.protocol}://${database.user}:${database.password}@${database.host}:${database.port}`
+  `${database.protocol}://${database.user}:${database.password}@${database.host}:${database.port}`,
 );
 
 export namespace Postgres {
@@ -51,7 +51,7 @@ export namespace Postgres {
 
   export async function addUser(
     user: User,
-    hashedPassword: string
+    hashedPassword: string,
   ): Promise<number> {
     const result = await pg`
       INSERT INTO users (name, email, password, "streetAddress")
@@ -89,7 +89,7 @@ export namespace Postgres {
   }
 
   export async function getUserIDAndPasswordHash(
-    email: string
+    email: string,
   ): Promise<{ id: number; password: string } | null> {
     const result = await pg`SELECT id, password FROM users
       WHERE email = ${email.toLowerCase()}
@@ -222,3 +222,5 @@ export namespace Postgres {
     `;
   }
 }
+
+export default Postgres;
