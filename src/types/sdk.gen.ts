@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteGameByIdData, DeleteGameByIdErrors, DeleteGameByIdResponses, GetGameByIdData, GetGameByIdErrors, GetGameByIdResponses, PatchGameByIdData, PatchGameByIdErrors, PatchGameByIdResponses, PatchUserData, PatchUserErrors, PatchUserResponses, PostGameData, PostGameErrors, PostGameResponses, PostUserData, PostUserErrors, PostUserResponses, PutGameByIdData, PutGameByIdErrors, PutGameByIdResponses, PutUserData, PutUserErrors, PutUserResponses } from './types.gen';
+import type { DeleteGameByIdData, DeleteGameByIdErrors, DeleteGameByIdResponses, GetExchangeByIdData, GetExchangeByIdErrors, GetExchangeByIdResponses, GetGameByIdData, GetGameByIdErrors, GetGameByIdResponses, GetReceiveByIdData, GetReceiveByIdErrors, GetReceiveByIdResponses, PatchGameByIdData, PatchGameByIdErrors, PatchGameByIdResponses, PatchUserData, PatchUserErrors, PatchUserResponses, PostExchangeByIdData, PostExchangeByIdErrors, PostExchangeByIdResponses, PostGameData, PostGameErrors, PostGameResponses, PostUserData, PostUserErrors, PostUserResponses, PutGameByIdData, PutGameByIdErrors, PutGameByIdResponses, PutUserData, PutUserErrors, PutUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -115,3 +115,31 @@ export const putGameById = <ThrowOnError extends boolean = false>(options: Optio
         ...options.headers
     }
 });
+
+/**
+ * Get exchange info for a game
+ *
+ * Get the exchange info for a game with the specified ID
+ */
+export const getExchangeById = <ThrowOnError extends boolean = false>(options: Options<GetExchangeByIdData, ThrowOnError>) => (options.client ?? client).get<GetExchangeByIdResponses, GetExchangeByIdErrors, ThrowOnError>({ url: '/exchange/{id}', ...options });
+
+/**
+ * Exchange a game
+ *
+ * Put a game up to be exchanged to a specific user
+ */
+export const postExchangeById = <ThrowOnError extends boolean = false>(options: Options<PostExchangeByIdData, ThrowOnError>) => (options.client ?? client).post<PostExchangeByIdResponses, PostExchangeByIdErrors, ThrowOnError>({
+    url: '/exchange/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Receive a game from an exchange
+ *
+ * Gets the game from the ID from an exchange
+ */
+export const getReceiveById = <ThrowOnError extends boolean = false>(options: Options<GetReceiveByIdData, ThrowOnError>) => (options.client ?? client).get<GetReceiveByIdResponses, GetReceiveByIdErrors, ThrowOnError>({ url: '/receive/{id}', ...options });

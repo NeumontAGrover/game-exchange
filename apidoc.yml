@@ -154,6 +154,22 @@ components:
           - GameCube
         condition: good
         previousOwners: 2
+    GameExchange:
+      description: An object for exchanging a game to a specific user
+      type: object
+      required:
+        - gameID
+        - toUserID
+      properties:
+        gameID:
+          description: The ID of the game to be exchanged
+          type: integer
+        toUserID:
+          description: The ID of the user to exchange the game to
+          type: integer
+      example:
+        gameID: 1373
+        toUserID: 42
     InvalidFieldError:
       description: An error that can occur due to empty bodies or invalid fields
       type: object
@@ -555,6 +571,138 @@ paths:
                 $ref: "#/components/schemas/Game"
         "401":
           description: User is not authorized to delete this game or has a missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /exchange/{id}:
+    post:
+      summary: Exchange a game
+      description: Put a game up to be exchanged to a specific user
+      parameters:
+        - $ref: "#/components/parameters/AuthToken"
+        - $ref: "#/components/parameters/GameID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameExchange"
+      responses:
+        "200":
+          description: Game is up for exchange
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameExchange"
+        "401":
+          description: User is not authorized to exchange this game or has a missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    get:
+      summary: Get exchange info for a game
+      description: Get the exchange info for a game with the specified ID
+      parameters:
+        - $ref: "#/components/parameters/GameID"
+        - $ref: "#/components/parameters/AuthToken"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameExchange"
+        "401":
+          description: The user is not authorized to view exchange info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+    delete:
+      summary: Cancel an exchange for a game
+      description: Cancels the exchange for a game with the specified ID
+      parameters:
+        - $ref: "#/components/parameters/GameID"
+        - $ref: "#/components/parameters/AuthToken"
+      responses:
+        "200":
+          description: Exchange cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: User is not authorized to cancel this exchange or has a missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
+  /receive/{id}:
+    get:
+      summary: Receive a game from an exchange
+      description: Gets the game from the ID from an exchange
+      parameters:
+        - $ref: "#/components/parameters/AuthToken"
+        - $ref: "#/components/parameters/GameID"
+      responses:
+        "200":
+          description: Received Game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: User is not authorized to receive this game or has a missing or invalid token
           content:
             application/json:
               schema:

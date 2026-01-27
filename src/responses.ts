@@ -3,6 +3,7 @@
 import type {
   AlreadyExistsError,
   Game,
+  GameExchange,
   InternalServerError,
   InvalidFieldError,
   NotFoundError,
@@ -35,6 +36,19 @@ export namespace Responses {
 
   export function createdUser(token: string): Response {
     return Response.json(<UserToken>{ token }, { status: 201 });
+  }
+
+  export function createdGameExchange(
+    gameID: number,
+    toUserID: number,
+  ): Response {
+    return Response.json(
+      <GameExchange>{
+        gameID: gameID,
+        toUserID: toUserID,
+      },
+      { status: 201 },
+    );
   }
 
   export function emptyBody(): Response {
@@ -88,10 +102,10 @@ export namespace Responses {
     );
   }
 
-  export function notAuthorizedToModify(): Response {
+  export function notAuthorized(message: string): Response {
     return Response.json(
       <UnauthorizedError>{
-        message: "User is not authorized to modify this game",
+        message: message,
       },
       { status: 401 },
     );

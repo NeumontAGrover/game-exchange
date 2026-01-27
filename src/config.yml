@@ -1,10 +1,12 @@
 server:
+  domainName: game-exchange-api
   port: 3000
 
 database:
+  name: game_exchange_db
   protocol: postgres
   user: arthur
   password: retroexchange
-  host: localhost
-  port: 55000
+  host: game-exchange-db
+  port: 5432
   hashingMethod: bcrypt

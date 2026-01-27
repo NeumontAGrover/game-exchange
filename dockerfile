@@ -1,4 +1,4 @@
-# Dockerfile was written by me
+# docker build -t aog05/retro-exchange:v2 .
 
 FROM oven/bun:canary-alpine AS base
 WORKDIR /usr/local/app
@@ -7,7 +7,7 @@ COPY bun.lock .
 COPY package.json .
 RUN bun i --production
 
-COPY src .
+COPY src src
 
 RUN addgroup -S gamesgroup
 RUN adduser -S retrouser -G gamesgroup

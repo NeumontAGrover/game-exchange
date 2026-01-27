@@ -2,7 +2,13 @@
 // Only inline generation was used for repetative sections and to speed up development
 
 import { SQL } from "bun";
-import type { Game, GamePartial, User, UserPartial } from "./types";
+import type {
+  Game,
+  GameExchange,
+  GamePartial,
+  User,
+  UserPartial,
+} from "./types";
 import config from "./config.yml";
 
 const database = config.database;
@@ -12,6 +18,8 @@ const pg = new SQL(
 
 export namespace Postgres {
   export async function createSchema() {
+    await pg`CREATE DATABASE IF NOT EXISTS ${database.name}`;
+
     await pg`CREATE TABLE IF NOT EXISTS users (
       id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
       name VARCHAR(50) NOT NULL,
@@ -40,13 +48,20 @@ export namespace Postgres {
       token VARCHAR(36) PRIMARY KEY NOT NULL,
       "userID" SMALLINT REFERENCES users(id) NOT NULL
     )`;
+
+    await pg`CREATE TABLE IF NOT EXISTS exchanges (
+      "gameID" INTEGER PRIMARY KEY REFERENCES games(id) NOT NULL,
+      "toUserID" SMALLINT REFERENCES users(id) NOT NULL
+    )`;
   }
 
   export async function dropSchema() {
     await pg`DROP TABLE IF EXISTS sessions`;
     await pg`DROP TABLE IF EXISTS platforms_games`;
+    await pg`DROP TABLE IF EXISTS exchanges`;
     await pg`DROP TABLE IF EXISTS games`;
     await pg`DROP TABLE IF EXISTS users`;
+    await pg`DROP DATABASE IF EXISTS ${database.name}`;
   }
 
   export async function addUser(
@@ -207,9 +222,41 @@ export namespace Postgres {
     });
   }
 
+  export async function updateGameOwner(gameID: number, newOwnerID: number) {
+    const game = await getGameByID(gameID);
+    game!.previousOwners ??= 0;
+    game!.previousOwners++;
+
+    await pg`UPDATE games SET
+      "ownedBy" = ${newOwnerID},
+      "previousOwners" = ${game!.previousOwners}
+      WHERE id = ${gameID}
+    `;
+  }
+
   export async function deleteGameByID(gameID: number) {
     await pg`DELETE FROM platforms_games WHERE "gameID" = ${gameID}`;
     await pg`DELETE FROM games WHERE id = ${gameID}`;
+  }
+
+  export async function createExchange(gameID: number, toUserID: number) {
+    await pg`INSERT INTO exchanges ("gameID", "toUserID")
+      VALUES (${gameID}, ${toUserID})
+    `;
+  }
+
+  export async function getExchangeByID(
+    gameID: number,
+  ): Promise<GameExchange | null> {
+    const result = await pg`SELECT * FROM exchanges
+      WHERE "gameID" = ${gameID}
+    `;
+
+    return result.length > 0 ? result[0] : null;
+  }
+
+  export async function deleteExchangeByID(gameID: number) {
+    await pg`DELETE FROM exchanges WHERE "gameID" = ${gameID}`;
   }
 
   export async function insertToken(userID: number, token: string) {

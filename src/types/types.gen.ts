@@ -133,6 +133,20 @@ export type GamePartial = {
 };
 
 /**
+ * An object for exchanging a game to a specific user
+ */
+export type GameExchange = {
+    /**
+     * The ID of the game to be exchanged
+     */
+    gameID: number;
+    /**
+     * The ID of the user to exchange the game to
+     */
+    toUserID: number;
+};
+
+/**
  * An error that can occur due to empty bodies or invalid fields
  */
 export type InvalidFieldError = {
@@ -538,3 +552,135 @@ export type PutGameByIdResponses = {
 };
 
 export type PutGameByIdResponse = PutGameByIdResponses[keyof PutGameByIdResponses];
+
+export type GetExchangeByIdData = {
+    body?: never;
+    headers: {
+        /**
+         * Bearer token for user authentication
+         */
+        Authorization: string;
+    };
+    path: {
+        /**
+         * The ID of a game
+         */
+        ID: number;
+    };
+    query?: never;
+    url: '/exchange/{id}';
+};
+
+export type GetExchangeByIdErrors = {
+    /**
+     * The user is not authorized to view exchange info
+     */
+    401: UnauthorizedError;
+    /**
+     * Game not found
+     */
+    404: NotFoundError;
+    /**
+     * Internal server error
+     */
+    500: InternalServerError;
+};
+
+export type GetExchangeByIdError = GetExchangeByIdErrors[keyof GetExchangeByIdErrors];
+
+export type GetExchangeByIdResponses = {
+    /**
+     * OK
+     */
+    200: GameExchange;
+};
+
+export type GetExchangeByIdResponse = GetExchangeByIdResponses[keyof GetExchangeByIdResponses];
+
+export type PostExchangeByIdData = {
+    body: GameExchange;
+    headers: {
+        /**
+         * Bearer token for user authentication
+         */
+        Authorization: string;
+    };
+    path: {
+        /**
+         * The ID of a game
+         */
+        ID: number;
+    };
+    query?: never;
+    url: '/exchange/{id}';
+};
+
+export type PostExchangeByIdErrors = {
+    /**
+     * User is not authorized to exchange this game or has a missing or invalid token
+     */
+    401: UnauthorizedError;
+    /**
+     * Game not found
+     */
+    404: NotFoundError;
+    /**
+     * Internal server error
+     */
+    500: InternalServerError;
+};
+
+export type PostExchangeByIdError = PostExchangeByIdErrors[keyof PostExchangeByIdErrors];
+
+export type PostExchangeByIdResponses = {
+    /**
+     * Game is up for exchange
+     */
+    200: GameExchange;
+};
+
+export type PostExchangeByIdResponse = PostExchangeByIdResponses[keyof PostExchangeByIdResponses];
+
+export type GetReceiveByIdData = {
+    body?: never;
+    headers: {
+        /**
+         * Bearer token for user authentication
+         */
+        Authorization: string;
+    };
+    path: {
+        /**
+         * The ID of a game
+         */
+        ID: number;
+    };
+    query?: never;
+    url: '/receive/{id}';
+};
+
+export type GetReceiveByIdErrors = {
+    /**
+     * User is not authorized to receive this game or has a missing or invalid token
+     */
+    401: UnauthorizedError;
+    /**
+     * Game not found
+     */
+    404: NotFoundError;
+    /**
+     * Internal server error
+     */
+    500: InternalServerError;
+};
+
+export type GetReceiveByIdError = GetReceiveByIdErrors[keyof GetReceiveByIdErrors];
+
+export type GetReceiveByIdResponses = {
+    /**
+     * Received Game
+     */
+    200: Game;
+};
+
+export type GetReceiveByIdResponse = GetReceiveByIdResponses[keyof GetReceiveByIdResponses];
