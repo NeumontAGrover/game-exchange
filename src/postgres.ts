@@ -13,13 +13,11 @@ import config from "./config.yml";
 
 const database = config.database;
 const pg = new SQL(
-  `${database.protocol}://${database.user}:${database.password}@${database.host}:${database.port}`,
+  `${database.protocol}://${database.user}:${database.password}@${database.host}:${database.port}/${database.name}`,
 );
 
 export namespace Postgres {
   export async function createSchema() {
-    await pg`CREATE DATABASE IF NOT EXISTS ${database.name}`;
-
     await pg`CREATE TABLE IF NOT EXISTS users (
       id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
       name VARCHAR(50) NOT NULL,
@@ -61,7 +59,6 @@ export namespace Postgres {
     await pg`DROP TABLE IF EXISTS exchanges`;
     await pg`DROP TABLE IF EXISTS games`;
     await pg`DROP TABLE IF EXISTS users`;
-    await pg`DROP DATABASE IF EXISTS ${database.name}`;
   }
 
   export async function addUser(

@@ -1,5 +1,3 @@
-# docker build -t aog05/retro-exchange:v2 .
-
 FROM oven/bun:canary-alpine AS base
 WORKDIR /usr/local/app
 
