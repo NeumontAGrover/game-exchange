@@ -19,13 +19,37 @@ import Responses from "./responses";
 const server = config.server;
 
 if (Bun.argv.includes("--drop-schema")) await Postgres.dropSchema();
+await Postgres.dropSchema(); // For testing
 await Postgres.createSchema();
 
 console.info(`Server listening on http://${server.domainName}:${server.port}`);
 Bun.serve({
   port: server.port,
   routes: {
+    "/healthcheck": () => {
+      return new Response("OK", { status: 200 });
+    },
     "/user": {
+      GET: async (request) => {
+        const bearerToken = await Auth.getBearerToken(request);
+        if (!bearerToken) return Responses.missingBearerToken();
+
+        const userID = await Postgres.getUserIDFromToken(bearerToken);
+        if (userID === 0) return Responses.tokenNotFound();
+
+        let user: UserPartial | null = null;
+        try {
+          user = await Postgres.getUserFromID(userID);
+        } catch (e) {
+          console.error(`Error retrieving user ${userID}:`, e);
+          return Responses.internalServerError("An unexpected error occurred");
+        }
+
+        if (!user) return Responses.notFoundError(userID);
+
+        console.info(`User retrieved: ${userID}`);
+        return Response.json(user, { status: 200 });
+      },
       PUT: async (request) => {
         let body: LoginUser;
         try {
@@ -235,6 +259,9 @@ Bun.serve({
         }
 
         if (Object.keys(body).length === 0) return Responses.emptyBody();
+        const invalidField = Validation.validateGameFields(body);
+        if (invalidField)
+          return Responses.invalidField(invalidField.key, invalidField.value);
 
         try {
           await Postgres.patchGameByID(gameID, body);
@@ -294,6 +321,13 @@ Bun.serve({
           return Responses.missingBearerToken();
         }
 
+        const invalidField = Validation.validateExchange(body);
+        if (invalidField)
+          return Responses.invalidField(invalidField.key, invalidField.value);
+
+        const game = await Postgres.getGameByID(gameID);
+        if (!game) return Responses.notFoundError(gameID);
+
         const userID = await Postgres.getUserIDFromToken(bearerToken);
         const ownsGame = await Auth.userOwnsGame(userID, gameID);
         if (!ownsGame)
@@ -301,12 +335,21 @@ Bun.serve({
             "User is not authorized to modify this game",
           );
 
+        const toUserID = await Postgres.getUserIDFromEmail(body.toUserEmail);
+        if (!toUserID) return Responses.notFoundError(toUserID);
+        else if (toUserID === userID)
+          return Responses.invalidField("toUserEmail", body.toUserEmail);
+
+        const existingExchange = await Postgres.getExchangeByID(gameID);
+        if (existingExchange)
+          return Responses.exchangeAlreadyExists(existingExchange);
+
         try {
-          await Postgres.createExchange(gameID, body.toUserID);
+          await Postgres.createExchange(gameID, body.toUserEmail);
           console.info(
-            `Exchange created for game ${gameID} to userID ${body.toUserID}`,
+            `Exchange created for game ${gameID} to userID ${toUserID}`,
           );
-          return Responses.createdGameExchange(gameID, body.toUserID);
+          return Responses.createdGameExchange(gameID, body.toUserEmail);
         } catch (e) {
           console.error(`Error creating exchange for game ${gameID}:`, e);
           return Responses.internalServerError(
@@ -323,9 +366,8 @@ Bun.serve({
         }
 
         const userID = await Postgres.getUserIDFromToken(bearerToken);
-        const ownsGame = await Auth.userOwnsGame(userID, gameID);
-        if (!ownsGame)
-          return Responses.notAuthorized("User cannot view this exchange");
+        if (!userID)
+          return Responses.notAuthorized("Missing or invalid bearer token");
 
         let exchange: GameExchange | null = null;
         try {
@@ -348,12 +390,13 @@ Bun.serve({
           return Responses.missingBearerToken();
         }
 
+        const game = await Postgres.getGameByID(gameID);
+        if (!game) return Responses.notFoundError(gameID);
+
         const userID = await Postgres.getUserIDFromToken(bearerToken);
         const ownsGame = await Auth.userOwnsGame(userID, gameID);
         if (!ownsGame)
           return Responses.notAuthorized("User cannot delete this exchange");
-
-        const game = await Postgres.getGameByID(gameID);
 
         try {
           await Postgres.deleteExchangeByID(gameID);
@@ -368,7 +411,7 @@ Bun.serve({
       },
     },
     "/receive/:id": {
-      GET: async (request) => {
+      POST: async (request) => {
         const gameID = Number(request.params.id);
         const bearerToken = await Auth.getBearerToken(request);
         if (!bearerToken) {
@@ -387,7 +430,12 @@ Bun.serve({
         }
 
         if (!exchange) return Responses.notFoundError(gameID);
-        if (exchange.toUserID !== userID)
+
+        const toUserID = await Postgres.getUserIDFromEmail(
+          exchange.toUserEmail,
+        );
+        if (toUserID === 0) return Responses.notFoundError(toUserID);
+        else if (toUserID !== userID)
           return Responses.notAuthorized("User cannot receive this game");
 
         const game = await Postgres.getGameByID(gameID);

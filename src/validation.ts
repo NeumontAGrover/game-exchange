@@ -1,7 +1,13 @@
 // Code generation was used by GitHub Copilot to assist in creating this file.
 // Only inline generation was used for repetative sections and to speed up development
 
-import type { Game, User, UserPartial } from "./types";
+import type {
+  Game,
+  GameExchange,
+  GamePartial,
+  User,
+  UserPartial,
+} from "./types";
 
 type InvalidField = {
   key: string;
@@ -62,6 +68,17 @@ export namespace Validation {
   }
 
   export function validateUserDetails(user: UserPartial): InvalidField | null {
+    const userFields = Object.keys(<UserPartial>{
+      name: undefined,
+      email: undefined,
+      password: undefined,
+      streetAddress: undefined,
+    });
+    for (const key of Object.keys(user)) {
+      if (!userFields.includes(key))
+        return { key: key, value: "invalid field" };
+    }
+
     if (user.name !== undefined) {
       const name = validateName(user.name);
       if (name) return name;
@@ -105,6 +122,9 @@ export namespace Validation {
   }
 
   export function validateGame(game: Game): InvalidField | null {
+    const gameFieldsValidation = validateGameFields(game);
+    if (gameFieldsValidation) return gameFieldsValidation;
+
     const name = validateName(game.name);
     if (name) return name;
 
@@ -121,6 +141,32 @@ export namespace Validation {
 
     const previousOwners = validatePreviousOwners(game.previousOwners ?? 0);
     if (previousOwners) return previousOwners;
+
+    return null;
+  }
+
+  export function validateGameFields(game: GamePartial): InvalidField | null {
+    const gameFields = Object.keys(<GamePartial>{
+      name: undefined,
+      publisher: undefined,
+      year: undefined,
+      platforms: undefined,
+      condition: undefined,
+      previousOwners: undefined,
+    });
+    for (const key of Object.keys(game)) {
+      if (!gameFields.includes(key))
+        return { key: key, value: "invalid field" };
+    }
+
+    return null;
+  }
+
+  export function validateExchange(
+    exchange: GameExchange,
+  ): InvalidField | null {
+    const email = validateEmail(exchange.toUserEmail);
+    if (email) return email;
 
     return null;
   }

@@ -137,13 +137,9 @@ export type GamePartial = {
  */
 export type GameExchange = {
     /**
-     * The ID of the game to be exchanged
+     * The email of the user to exchange the game to
      */
-    gameID: number;
-    /**
-     * The ID of the user to exchange the game to
-     */
-    toUserID: number;
+    toUserEmail: string;
 };
 
 /**
@@ -207,6 +203,45 @@ export type UserId = number;
  * Bearer token for user authentication
  */
 export type AuthToken = string;
+
+export type GetUserData = {
+    body?: never;
+    headers: {
+        /**
+         * Bearer token for user authentication
+         */
+        Authorization: string;
+    };
+    path?: never;
+    query?: never;
+    url: '/user';
+};
+
+export type GetUserErrors = {
+    /**
+     * Missing bearer token or token is invalid
+     */
+    401: UnauthorizedError;
+    /**
+     * User not found
+     */
+    404: NotFoundError;
+    /**
+     * Internal server error
+     */
+    500: InternalServerError;
+};
+
+export type GetUserError = GetUserErrors[keyof GetUserErrors];
+
+export type GetUserResponses = {
+    /**
+     * OK
+     */
+    200: UserPartial;
+};
+
+export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
 export type PatchUserData = {
     body: UserPartial;
@@ -553,6 +588,50 @@ export type PutGameByIdResponses = {
 
 export type PutGameByIdResponse = PutGameByIdResponses[keyof PutGameByIdResponses];
 
+export type DeleteExchangeByIdData = {
+    body?: never;
+    headers: {
+        /**
+         * Bearer token for user authentication
+         */
+        Authorization: string;
+    };
+    path: {
+        /**
+         * The ID of a game
+         */
+        ID: number;
+    };
+    query?: never;
+    url: '/exchange/{id}';
+};
+
+export type DeleteExchangeByIdErrors = {
+    /**
+     * User is not authorized to cancel this exchange or has a missing or invalid token
+     */
+    401: UnauthorizedError;
+    /**
+     * Game not found
+     */
+    404: NotFoundError;
+    /**
+     * Internal server error
+     */
+    500: InternalServerError;
+};
+
+export type DeleteExchangeByIdError = DeleteExchangeByIdErrors[keyof DeleteExchangeByIdErrors];
+
+export type DeleteExchangeByIdResponses = {
+    /**
+     * Exchange cancelled
+     */
+    200: Game;
+};
+
+export type DeleteExchangeByIdResponse = DeleteExchangeByIdResponses[keyof DeleteExchangeByIdResponses];
+
 export type GetExchangeByIdData = {
     body?: never;
     headers: {
@@ -573,7 +652,7 @@ export type GetExchangeByIdData = {
 
 export type GetExchangeByIdErrors = {
     /**
-     * The user is not authorized to view exchange info
+     * User has a missing or invalid token
      */
     401: UnauthorizedError;
     /**
@@ -617,6 +696,10 @@ export type PostExchangeByIdData = {
 
 export type PostExchangeByIdErrors = {
     /**
+     * Invalid exchange field or missing body
+     */
+    400: InvalidFieldError;
+    /**
      * User is not authorized to exchange this game or has a missing or invalid token
      */
     401: UnauthorizedError;
@@ -624,6 +707,10 @@ export type PostExchangeByIdErrors = {
      * Game not found
      */
     404: NotFoundError;
+    /**
+     * Game is already up for exchange
+     */
+    409: AlreadyExistsError;
     /**
      * Internal server error
      */
@@ -636,12 +723,12 @@ export type PostExchangeByIdResponses = {
     /**
      * Game is up for exchange
      */
-    200: GameExchange;
+    201: GameExchange;
 };
 
 export type PostExchangeByIdResponse = PostExchangeByIdResponses[keyof PostExchangeByIdResponses];
 
-export type GetReceiveByIdData = {
+export type PostReceiveByIdData = {
     body?: never;
     headers: {
         /**
@@ -659,7 +746,7 @@ export type GetReceiveByIdData = {
     url: '/receive/{id}';
 };
 
-export type GetReceiveByIdErrors = {
+export type PostReceiveByIdErrors = {
     /**
      * User is not authorized to receive this game or has a missing or invalid token
      */
@@ -674,13 +761,13 @@ export type GetReceiveByIdErrors = {
     500: InternalServerError;
 };
 
-export type GetReceiveByIdError = GetReceiveByIdErrors[keyof GetReceiveByIdErrors];
+export type PostReceiveByIdError = PostReceiveByIdErrors[keyof PostReceiveByIdErrors];
 
-export type GetReceiveByIdResponses = {
+export type PostReceiveByIdResponses = {
     /**
      * Received Game
      */
     200: Game;
 };
 
-export type GetReceiveByIdResponse = GetReceiveByIdResponses[keyof GetReceiveByIdResponses];
+export type PostReceiveByIdResponse = PostReceiveByIdResponses[keyof PostReceiveByIdResponses];

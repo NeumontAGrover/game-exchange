@@ -49,7 +49,7 @@ export namespace Postgres {
 
     await pg`CREATE TABLE IF NOT EXISTS exchanges (
       "gameID" INTEGER PRIMARY KEY REFERENCES games(id) NOT NULL,
-      "toUserID" SMALLINT REFERENCES users(id) NOT NULL
+      "toUserEmail" VARCHAR(256) REFERENCES users(email) NOT NULL
     )`;
   }
 
@@ -114,6 +114,22 @@ export namespace Postgres {
       WHERE token = ${token}
     `;
     return result.length > 0 ? result[0].userID : 0;
+  }
+
+  export async function getUserIDFromEmail(email: string): Promise<number> {
+    const result = await pg`SELECT id FROM users
+      WHERE email = ${email.toLowerCase()}
+    `;
+    return result.length > 0 ? result[0].id : 0;
+  }
+
+  export async function getUserFromID(
+    userID: number,
+  ): Promise<UserPartial | null> {
+    const result = await pg`SELECT name, email, "streetAddress" FROM users
+      WHERE id = ${userID}
+    `;
+    return result.length > 0 ? result[0] : null;
   }
 
   export async function userExists(email: string): Promise<boolean> {
@@ -236,9 +252,9 @@ export namespace Postgres {
     await pg`DELETE FROM games WHERE id = ${gameID}`;
   }
 
-  export async function createExchange(gameID: number, toUserID: number) {
-    await pg`INSERT INTO exchanges ("gameID", "toUserID")
-      VALUES (${gameID}, ${toUserID})
+  export async function createExchange(gameID: number, toUserEmail: string) {
+    await pg`INSERT INTO exchanges ("gameID", "toUserEmail")
+      VALUES (${gameID}, ${toUserEmail})
     `;
   }
 

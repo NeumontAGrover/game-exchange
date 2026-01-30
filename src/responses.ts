@@ -40,12 +40,12 @@ export namespace Responses {
 
   export function createdGameExchange(
     gameID: number,
-    toUserID: number,
+    toUserEmail: string,
   ): Response {
     return Response.json(
       <GameExchange>{
         gameID: gameID,
-        toUserID: toUserID,
+        toUserEmail: toUserEmail,
       },
       { status: 201 },
     );
@@ -125,6 +125,15 @@ export namespace Responses {
     return Response.json(
       <AlreadyExistsError>{
         message: "User with that email already exists",
+      },
+      { status: 409 },
+    );
+  }
+
+  export function exchangeAlreadyExists(exchange: GameExchange): Response {
+    return Response.json(
+      <AlreadyExistsError>{
+        message: `Exchange with that game ID already exists with email ${exchange.toUserEmail}`,
       },
       { status: 409 },
     );

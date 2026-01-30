@@ -10,3 +10,6 @@ database:
   host: game-exchange-db
   port: 5432
   hashingMethod: bcrypt
+
+nginx:
+  hostPort: 8080

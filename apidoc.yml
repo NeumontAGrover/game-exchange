@@ -158,18 +158,13 @@ components:
       description: An object for exchanging a game to a specific user
       type: object
       required:
-        - gameID
-        - toUserID
+        - toUserEmail
       properties:
-        gameID:
-          description: The ID of the game to be exchanged
-          type: integer
-        toUserID:
-          description: The ID of the user to exchange the game to
-          type: integer
+        toUserEmail:
+          description: The email of the user to exchange the game to
+          type: string
       example:
-        gameID: 1373
-        toUserID: 42
+        toUserEmail: "user@example.com"
     InvalidFieldError:
       description: An error that can occur due to empty bodies or invalid fields
       type: object
@@ -262,6 +257,36 @@ components:
       example: "Bearer 550e8400-e29b-41d4-a716-446655440000"
 paths:
   /user:
+    get:
+      summary: Get the signed-in user's info
+      description: Gets the user info for the user associated with the provided token
+      parameters:
+        - $ref: "#/components/parameters/AuthToken"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPartial"
+        "401":
+          description: Missing bearer token or token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundError"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalServerError"
     put:
       summary: Login as a user
       description: Logs the user in with the email and password and it gives a new token
@@ -483,18 +508,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Game"
-        "401":
-          description: User is not authorized to update this game or has a missing or invalid token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UnauthorizedError"
         "400":
           description: Invalid game field or missing body
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidFieldError"
+        "401":
+          description: User is not authorized to update this game or has a missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
         "404":
           description: Game not found
           content:
@@ -601,12 +626,18 @@ paths:
             schema:
               $ref: "#/components/schemas/GameExchange"
       responses:
-        "200":
+        "201":
           description: Game is up for exchange
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GameExchange"
+        "400":
+          description: Invalid exchange field or missing body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidFieldError"
         "401":
           description: User is not authorized to exchange this game or has a missing or invalid token
           content:
@@ -619,6 +650,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotFoundError"
+        "409":
+          description: Game is already up for exchange
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlreadyExistsError"
         "500":
           description: Internal server error
           content:
@@ -639,7 +676,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/GameExchange"
         "401":
-          description: The user is not authorized to view exchange info
+          description: User has a missing or invalid token
           content:
             application/json:
               schema:
@@ -688,7 +725,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/InternalServerError"
   /receive/{id}:
-    get:
+    post:
       summary: Receive a game from an exchange
       description: Gets the game from the ID from an exchange
       parameters:

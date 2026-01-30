@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteGameByIdData, DeleteGameByIdErrors, DeleteGameByIdResponses, GetExchangeByIdData, GetExchangeByIdErrors, GetExchangeByIdResponses, GetGameByIdData, GetGameByIdErrors, GetGameByIdResponses, GetReceiveByIdData, GetReceiveByIdErrors, GetReceiveByIdResponses, PatchGameByIdData, PatchGameByIdErrors, PatchGameByIdResponses, PatchUserData, PatchUserErrors, PatchUserResponses, PostExchangeByIdData, PostExchangeByIdErrors, PostExchangeByIdResponses, PostGameData, PostGameErrors, PostGameResponses, PostUserData, PostUserErrors, PostUserResponses, PutGameByIdData, PutGameByIdErrors, PutGameByIdResponses, PutUserData, PutUserErrors, PutUserResponses } from './types.gen';
+import type { DeleteExchangeByIdData, DeleteExchangeByIdErrors, DeleteExchangeByIdResponses, DeleteGameByIdData, DeleteGameByIdErrors, DeleteGameByIdResponses, GetExchangeByIdData, GetExchangeByIdErrors, GetExchangeByIdResponses, GetGameByIdData, GetGameByIdErrors, GetGameByIdResponses, GetUserData, GetUserErrors, GetUserResponses, PatchGameByIdData, PatchGameByIdErrors, PatchGameByIdResponses, PatchUserData, PatchUserErrors, PatchUserResponses, PostExchangeByIdData, PostExchangeByIdErrors, PostExchangeByIdResponses, PostGameData, PostGameErrors, PostGameResponses, PostReceiveByIdData, PostReceiveByIdErrors, PostReceiveByIdResponses, PostUserData, PostUserErrors, PostUserResponses, PutGameByIdData, PutGameByIdErrors, PutGameByIdResponses, PutUserData, PutUserErrors, PutUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -17,6 +17,13 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      */
     meta?: Record<string, unknown>;
 };
+
+/**
+ * Get the signed-in user's info
+ *
+ * Gets the user info for the user associated with the provided token
+ */
+export const getUser = <ThrowOnError extends boolean = false>(options: Options<GetUserData, ThrowOnError>) => (options.client ?? client).get<GetUserResponses, GetUserErrors, ThrowOnError>({ url: '/user', ...options });
 
 /**
  * Update user info
@@ -117,6 +124,13 @@ export const putGameById = <ThrowOnError extends boolean = false>(options: Optio
 });
 
 /**
+ * Cancel an exchange for a game
+ *
+ * Cancels the exchange for a game with the specified ID
+ */
+export const deleteExchangeById = <ThrowOnError extends boolean = false>(options: Options<DeleteExchangeByIdData, ThrowOnError>) => (options.client ?? client).delete<DeleteExchangeByIdResponses, DeleteExchangeByIdErrors, ThrowOnError>({ url: '/exchange/{id}', ...options });
+
+/**
  * Get exchange info for a game
  *
  * Get the exchange info for a game with the specified ID
@@ -142,4 +156,4 @@ export const postExchangeById = <ThrowOnError extends boolean = false>(options: 
  *
  * Gets the game from the ID from an exchange
  */
-export const getReceiveById = <ThrowOnError extends boolean = false>(options: Options<GetReceiveByIdData, ThrowOnError>) => (options.client ?? client).get<GetReceiveByIdResponses, GetReceiveByIdErrors, ThrowOnError>({ url: '/receive/{id}', ...options });
+export const postReceiveById = <ThrowOnError extends boolean = false>(options: Options<PostReceiveByIdData, ThrowOnError>) => (options.client ?? client).post<PostReceiveByIdResponses, PostReceiveByIdErrors, ThrowOnError>({ url: '/receive/{id}', ...options });
