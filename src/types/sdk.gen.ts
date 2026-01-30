@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteExchangeByIdData, DeleteExchangeByIdErrors, DeleteExchangeByIdResponses, DeleteGameByIdData, DeleteGameByIdErrors, DeleteGameByIdResponses, GetExchangeByIdData, GetExchangeByIdErrors, GetExchangeByIdResponses, GetGameByIdData, GetGameByIdErrors, GetGameByIdResponses, GetUserData, GetUserErrors, GetUserResponses, PatchGameByIdData, PatchGameByIdErrors, PatchGameByIdResponses, PatchUserData, PatchUserErrors, PatchUserResponses, PostExchangeByIdData, PostExchangeByIdErrors, PostExchangeByIdResponses, PostGameData, PostGameErrors, PostGameResponses, PostReceiveByIdData, PostReceiveByIdErrors, PostReceiveByIdResponses, PostUserData, PostUserErrors, PostUserResponses, PutGameByIdData, PutGameByIdErrors, PutGameByIdResponses, PutUserData, PutUserErrors, PutUserResponses } from './types.gen';
+import type { DeleteExchangeByIdData, DeleteExchangeByIdErrors, DeleteExchangeByIdResponses, DeleteGameByIdData, DeleteGameByIdErrors, DeleteGameByIdResponses, GetExchangeByIdData, GetExchangeByIdErrors, GetExchangeByIdResponses, GetGameByIdData, GetGameByIdErrors, GetGameByIdResponses, GetUserData, GetUserErrors, GetUserResponses, PatchGameByIdData, PatchGameByIdErrors, PatchGameByIdResponses, PatchUserData, PatchUserErrors, PatchUserResponses, PostExchangeByIdAcceptData, PostExchangeByIdAcceptErrors, PostExchangeByIdAcceptResponses, PostExchangeByIdData, PostExchangeByIdDeclineData, PostExchangeByIdDeclineErrors, PostExchangeByIdDeclineResponses, PostExchangeByIdErrors, PostExchangeByIdResponses, PostGameData, PostGameErrors, PostGameResponses, PostUserData, PostUserErrors, PostUserResponses, PutGameByIdData, PutGameByIdErrors, PutGameByIdResponses, PutUserData, PutUserErrors, PutUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -138,9 +138,9 @@ export const deleteExchangeById = <ThrowOnError extends boolean = false>(options
 export const getExchangeById = <ThrowOnError extends boolean = false>(options: Options<GetExchangeByIdData, ThrowOnError>) => (options.client ?? client).get<GetExchangeByIdResponses, GetExchangeByIdErrors, ThrowOnError>({ url: '/exchange/{id}', ...options });
 
 /**
- * Exchange a game
+ * Exchange a game with another user
  *
- * Put a game up to be exchanged to a specific user
+ * Put a game up to be exchanged to a specific user. A specific game that the other user owns can be traded back.
  */
 export const postExchangeById = <ThrowOnError extends boolean = false>(options: Options<PostExchangeByIdData, ThrowOnError>) => (options.client ?? client).post<PostExchangeByIdResponses, PostExchangeByIdErrors, ThrowOnError>({
     url: '/exchange/{id}',
@@ -152,8 +152,15 @@ export const postExchangeById = <ThrowOnError extends boolean = false>(options: 
 });
 
 /**
- * Receive a game from an exchange
+ * Receive a game from an exchange and send the requested game back
  *
- * Gets the game from the ID from an exchange
+ * Gets the game from the ID from an exchange and sends the requested game back to the user who initiated the exchange
  */
-export const postReceiveById = <ThrowOnError extends boolean = false>(options: Options<PostReceiveByIdData, ThrowOnError>) => (options.client ?? client).post<PostReceiveByIdResponses, PostReceiveByIdErrors, ThrowOnError>({ url: '/receive/{id}', ...options });
+export const postExchangeByIdAccept = <ThrowOnError extends boolean = false>(options: Options<PostExchangeByIdAcceptData, ThrowOnError>) => (options.client ?? client).post<PostExchangeByIdAcceptResponses, PostExchangeByIdAcceptErrors, ThrowOnError>({ url: '/exchange/{id}/accept', ...options });
+
+/**
+ * Decline an exchange for a game
+ *
+ * Declines the exchange for a game with the specified ID. This will delete the exchange without sending any games.
+ */
+export const postExchangeByIdDecline = <ThrowOnError extends boolean = false>(options: Options<PostExchangeByIdDeclineData, ThrowOnError>) => (options.client ?? client).post<PostExchangeByIdDeclineResponses, PostExchangeByIdDeclineErrors, ThrowOnError>({ url: '/exchange/{id}/decline', ...options });

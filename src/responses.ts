@@ -2,6 +2,7 @@
 
 import type {
   AlreadyExistsError,
+  ForbiddenError,
   Game,
   GameExchange,
   InternalServerError,
@@ -109,6 +110,10 @@ export namespace Responses {
       },
       { status: 401 },
     );
+  }
+
+  export function forbidden(message: string): Response {
+    return Response.json(<ForbiddenError>{ message: message }, { status: 403 });
   }
 
   export function notFoundError(triedID: number): Response {

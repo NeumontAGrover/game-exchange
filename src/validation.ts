@@ -165,6 +165,15 @@ export namespace Validation {
   export function validateExchange(
     exchange: GameExchange,
   ): InvalidField | null {
+    const exchangeFields = Object.keys(<GameExchange>{
+      toUserEmail: "",
+      requestedGameID: undefined,
+    });
+    for (const key of Object.keys(exchange)) {
+      if (!exchangeFields.includes(key))
+        return { key: key, value: "invalid field" };
+    }
+
     const email = validateEmail(exchange.toUserEmail);
     if (email) return email;
 

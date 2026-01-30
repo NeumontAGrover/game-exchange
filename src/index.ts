@@ -19,7 +19,6 @@ import Responses from "./responses";
 const server = config.server;
 
 if (Bun.argv.includes("--drop-schema")) await Postgres.dropSchema();
-await Postgres.dropSchema(); // For testing
 await Postgres.createSchema();
 
 console.info(`Server listening on http://${server.domainName}:${server.port}`);
@@ -330,9 +329,10 @@ Bun.serve({
 
         const userID = await Postgres.getUserIDFromToken(bearerToken);
         const ownsGame = await Auth.userOwnsGame(userID, gameID);
+
         if (!ownsGame)
           return Responses.notAuthorized(
-            "User is not authorized to modify this game",
+            "User is not authorized to exchange this game",
           );
 
         const toUserID = await Postgres.getUserIDFromEmail(body.toUserEmail);
@@ -340,12 +340,33 @@ Bun.serve({
         else if (toUserID === userID)
           return Responses.invalidField("toUserEmail", body.toUserEmail);
 
+        if (body.requestedGameID) {
+          const requestedGame = await Postgres.getGameByID(
+            body.requestedGameID,
+          );
+          if (!requestedGame)
+            return Responses.notFoundError(body.requestedGameID);
+
+          const recipientOwnsRequestedGame = await Auth.userOwnsGame(
+            toUserID,
+            body.requestedGameID,
+          );
+          if (!recipientOwnsRequestedGame)
+            return Responses.forbidden(
+              "The receiver must own the requested game to exchange",
+            );
+        }
+
         const existingExchange = await Postgres.getExchangeByID(gameID);
         if (existingExchange)
           return Responses.exchangeAlreadyExists(existingExchange);
 
         try {
-          await Postgres.createExchange(gameID, body.toUserEmail);
+          await Postgres.createExchange(
+            gameID,
+            body.toUserEmail,
+            body.requestedGameID,
+          );
           console.info(
             `Exchange created for game ${gameID} to userID ${toUserID}`,
           );
@@ -410,7 +431,85 @@ Bun.serve({
         }
       },
     },
-    "/receive/:id": {
+    "/exchange/:id/accept": {
+      POST: async (request) => {
+        const gameID = Number(request.params.id);
+        const bearerToken = await Auth.getBearerToken(request);
+        if (!bearerToken) {
+          console.info("Request missing bearer token");
+          return Responses.missingBearerToken();
+        }
+
+        const userID = await Postgres.getUserIDFromToken(bearerToken);
+
+        let exchange: GameExchange | null = null;
+        try {
+          exchange = await Postgres.getExchangeByID(gameID);
+        } catch (e) {
+          console.error(`Error retrieving exchange for game ${gameID}:`, e);
+          return Responses.internalServerError("An unexpected error occurred");
+        }
+
+        if (!exchange) return Responses.notFoundError(gameID);
+
+        const toUserID = await Postgres.getUserIDFromEmail(
+          exchange.toUserEmail,
+        );
+        if (toUserID === 0) return Responses.notFoundError(toUserID);
+        else if (toUserID !== userID)
+          return Responses.notAuthorized("User cannot receive this game");
+
+        const game = await Postgres.getGameByID(gameID);
+        if (!game) return Responses.notFoundError(gameID);
+
+        const requestedGame = exchange.requestedGameID
+          ? await Postgres.getGameByID(exchange.requestedGameID)
+          : null;
+
+        if (exchange.requestedGameID && !requestedGame)
+          return Responses.notFoundError(exchange.requestedGameID);
+
+        if (requestedGame) {
+          const ownsRequestedGame = await Auth.userOwnsGame(
+            userID,
+            exchange.requestedGameID!,
+          );
+
+          if (!ownsRequestedGame)
+            return Responses.notAuthorized(
+              "Receiver does not own the requested game",
+            );
+        }
+
+        try {
+          await Postgres.updateGameOwner(gameID, toUserID);
+          console.info(`Game ${gameID} transferred to userID ${toUserID}`);
+
+          if (exchange.requestedGameID) {
+            await Postgres.updateGameOwner(exchange.requestedGameID, userID);
+            console.info(
+              `Game ${exchange.requestedGameID} transferred to userID ${userID}`,
+            );
+          }
+
+          await Postgres.deleteExchangeByID(gameID);
+        } catch (e) {
+          console.error(
+            `Error receiving game ${gameID} for userID ${toUserID}:`,
+          );
+          console.error(
+            `Error receiving game ${exchange.requestedGameID} for userID ${userID}:`,
+          );
+          console.error(e);
+          return Responses.internalServerError(
+            "Error occurred while receiving the game",
+          );
+        }
+
+        return Response.json(game, { status: 200 });
+      },
+    },
+    "/exchange/:id/decline": {
       POST: async (request) => {
         const gameID = Number(request.params.id);
         const bearerToken = await Auth.getBearerToken(request);
@@ -442,16 +541,11 @@ Bun.serve({
         if (!game) return Responses.notFoundError(gameID);
 
         try {
-          await Postgres.updateGameOwner(gameID, userID);
           await Postgres.deleteExchangeByID(gameID);
-          console.info(`Game ${gameID} transferred to userID ${userID}`);
         } catch (e) {
-          console.error(
-            `Error receiving game ${gameID} for userID ${userID}:`,
-            e,
-          );
+          console.error(`Error declining exchange for game ${gameID}:`, e);
           return Responses.internalServerError(
-            "Error occurred while receiving the game",
+            "Error occurred while declining the exchange",
           );
         }
 

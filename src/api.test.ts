@@ -972,6 +972,38 @@ describe("game endpoints", () => {
 });
 
 describe("exchange endpoints", () => {
+  beforeAll(async () => {
+    await fetch(`http://localhost:${nginx.hostPort}/game`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userToken1}`,
+      },
+      body: JSON.stringify(<Game>{
+        name: "Unit Test Simulator",
+        platforms: ["pc", "teststation 4"],
+        publisher: "Exchange Publisher",
+        year: 2020,
+        condition: "good",
+      }),
+    });
+
+    await fetch(`http://localhost:${nginx.hostPort}/game`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userToken2}`,
+      },
+      body: JSON.stringify(<Game>{
+        name: "Minecraft Test Edition",
+        platforms: ["mobile"],
+        publisher: "mojang",
+        year: 2009,
+        condition: "fair",
+      }),
+    });
+  });
+
   describe("post /exchange/{gameID}", () => {
     test("post 201", async () => {
       const exchange: GameExchange = {
@@ -990,6 +1022,22 @@ describe("exchange endpoints", () => {
       );
 
       expect(postResponse.status).toBe(201);
+
+      const postResponseWithRequest = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/3`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+          body: JSON.stringify(<GameExchange>{
+            toUserEmail: "someone409@google.com",
+            requestedGameID: 4,
+          }),
+        },
+      );
+
+      expect(postResponseWithRequest.status).toBe(201);
     });
 
     test("post 400 (invalid field)", async () => {
@@ -1012,10 +1060,6 @@ describe("exchange endpoints", () => {
     });
 
     test("post 400 (missing body)", async () => {
-      const exchange: GameExchange = {
-        toUserEmail: "someone409@google.com",
-      };
-
       const postResponse = await fetch(
         `http://localhost:${nginx.hostPort}/exchange/1`,
         {
@@ -1121,6 +1165,26 @@ describe("exchange endpoints", () => {
       expect(postResponse.status).toBe(401);
     });
 
+    test("post 403", async () => {
+      const exchange: GameExchange = {
+        toUserEmail: "someone409@google.com",
+        requestedGameID: 1,
+      };
+
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/3`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+          body: JSON.stringify(exchange),
+        },
+      );
+
+      expect(postResponse.status).toBe(403);
+    });
+
     test("post 404 (not found game)", async () => {
       const exchange: GameExchange = {
         toUserEmail: "someone409@google.com",
@@ -1143,6 +1207,26 @@ describe("exchange endpoints", () => {
     test("post 404 (not found user)", async () => {
       const exchange: GameExchange = {
         toUserEmail: "oops@google.com",
+      };
+
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/1`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+          body: JSON.stringify(exchange),
+        },
+      );
+
+      expect(postResponse.status).toBe(404);
+    });
+
+    test("post 404 (not found requested game)", async () => {
+      const exchange: GameExchange = {
+        toUserEmail: "someone409@google.com",
+        requestedGameID: 2000,
       };
 
       const postResponse = await fetch(
@@ -1345,11 +1429,24 @@ describe("exchange endpoints", () => {
   });
 });
 
-describe("receive endpoints", () => {
-  describe("post /receive/{gameID}", () => {
+describe("accept endpoints", () => {
+  describe("post /exchange/{gameID}/accept", () => {
+    beforeAll(async () => {
+      await fetch(`http://localhost:${nginx.hostPort}/exchange/3`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${userToken1}`,
+        },
+        body: JSON.stringify(<GameExchange>{
+          toUserEmail: "someone409@google.com",
+          requestedGameID: 4,
+        }),
+      });
+    });
+
     test("post 401 (missing token)", async () => {
       const postResponse = await fetch(
-        `http://localhost:${nginx.hostPort}/receive/1`,
+        `http://localhost:${nginx.hostPort}/exchange/1/accept`,
         {
           method: "POST",
         },
@@ -1360,7 +1457,7 @@ describe("receive endpoints", () => {
 
     test("post 401 (invalid token)", async () => {
       const postResponse = await fetch(
-        `http://localhost:${nginx.hostPort}/receive/1`,
+        `http://localhost:${nginx.hostPort}/exchange/1/accept`,
         {
           method: "POST",
           headers: {
@@ -1372,9 +1469,23 @@ describe("receive endpoints", () => {
       expect(postResponse.status).toBe(401);
     });
 
+    test("post 401 (same user)", async () => {
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/1/accept`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+        },
+      );
+
+      expect(postResponse.status).toBe(401);
+    });
+
     test("post 404 (never existed)", async () => {
       const postResponse = await fetch(
-        `http://localhost:${nginx.hostPort}/receive/2000`,
+        `http://localhost:${nginx.hostPort}/exchange/2000/accept`,
         {
           method: "POST",
           headers: {
@@ -1387,8 +1498,39 @@ describe("receive endpoints", () => {
     });
 
     test("post 404 (deleted)", async () => {
+      await fetch(`http://localhost:${nginx.hostPort}/exchange/4`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${userToken2}`,
+        },
+        body: JSON.stringify(<GameExchange>{
+          toUserEmail: "someone201@google.com",
+        }),
+      });
+
+      await fetch(`http://localhost:${nginx.hostPort}/exchange/4`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${userToken2}`,
+        },
+      });
+
       const postResponse = await fetch(
-        `http://localhost:${nginx.hostPort}/receive/3`,
+        `http://localhost:${nginx.hostPort}/exchange/4/accept`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+        },
+      );
+
+      expect(postResponse.status).toBe(404);
+    });
+
+    test("post 200 (no requested)", async () => {
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/1/accept`,
         {
           method: "POST",
           headers: {
@@ -1397,12 +1539,12 @@ describe("receive endpoints", () => {
         },
       );
 
-      expect(postResponse.status).toBe(404);
+      expect(postResponse.status).toBe(200);
     });
 
-    test("post 200", async () => {
+    test("post 200 (requested game)", async () => {
       const postResponse = await fetch(
-        `http://localhost:${nginx.hostPort}/receive/1`,
+        `http://localhost:${nginx.hostPort}/exchange/3/accept`,
         {
           method: "POST",
           headers: {
@@ -1415,7 +1557,7 @@ describe("receive endpoints", () => {
     });
 
     test("cannot delete sent game 401", async () => {
-      const deleteResponse = await fetch(
+      const deleteResponseNoRequest = await fetch(
         `http://localhost:${nginx.hostPort}/game/1`,
         {
           method: "DELETE",
@@ -1425,11 +1567,23 @@ describe("receive endpoints", () => {
         },
       );
 
-      expect(deleteResponse.status).toBe(401);
+      expect(deleteResponseNoRequest.status).toBe(401);
+
+      const deleteResponseWithRequest = await fetch(
+        `http://localhost:${nginx.hostPort}/game/4`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+        },
+      );
+
+      expect(deleteResponseWithRequest.status).toBe(401);
     });
 
     test("delete received game 200", async () => {
-      const deleteResponse = await fetch(
+      const deleteResponseNoRequest = await fetch(
         `http://localhost:${nginx.hostPort}/game/1`,
         {
           method: "DELETE",
@@ -1439,7 +1593,116 @@ describe("receive endpoints", () => {
         },
       );
 
-      expect(deleteResponse.status).toBe(200);
+      expect(deleteResponseNoRequest.status).toBe(200);
+
+      const deleteResponseWithRequest = await fetch(
+        `http://localhost:${nginx.hostPort}/game/4`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${userToken2}`,
+          },
+        },
+      );
+
+      expect(deleteResponseWithRequest.status).toBe(200);
+    });
+  });
+});
+
+describe("decline endpoints", () => {
+  describe("post /exchange/{gameID}/decline", () => {
+    beforeAll(async () => {
+      await fetch(`http://localhost:${nginx.hostPort}/exchange/3`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${userToken2}`,
+        },
+        body: JSON.stringify(<GameExchange>{
+          toUserEmail: "someone201@google.com",
+        }),
+      });
+    });
+
+    test("decline 401 (missing token)", async () => {
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/3/decline`,
+        {
+          method: "POST",
+        },
+      );
+
+      expect(postResponse.status).toBe(401);
+    });
+
+    test("decline 401 (invalid token)", async () => {
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/3/decline`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer invalid-token",
+          },
+        },
+      );
+
+      expect(postResponse.status).toBe(401);
+    });
+
+    test("decline 401 (not recipient)", async () => {
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/3/decline`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken2}`,
+          },
+        },
+      );
+
+      expect(postResponse.status).toBe(401);
+    });
+
+    test("decline 404 (never existed)", async () => {
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/2000/decline`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+        },
+      );
+
+      expect(postResponse.status).toBe(404);
+    });
+
+    test("decline 200", async () => {
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/3/decline`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+        },
+      );
+
+      expect(postResponse.status).toBe(200);
+    });
+
+    test("decline 404 (after decline)", async () => {
+      const postResponse = await fetch(
+        `http://localhost:${nginx.hostPort}/exchange/3/decline`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${userToken1}`,
+          },
+        },
+      );
+
+      expect(postResponse.status).toBe(404);
     });
   });
 });

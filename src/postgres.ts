@@ -49,7 +49,8 @@ export namespace Postgres {
 
     await pg`CREATE TABLE IF NOT EXISTS exchanges (
       "gameID" INTEGER PRIMARY KEY REFERENCES games(id) NOT NULL,
-      "toUserEmail" VARCHAR(256) REFERENCES users(email) NOT NULL
+      "toUserEmail" VARCHAR(256) REFERENCES users(email) NOT NULL,
+      "requestedGameID" INTEGER REFERENCES games(id) NULL
     )`;
   }
 
@@ -252,16 +253,21 @@ export namespace Postgres {
     await pg`DELETE FROM games WHERE id = ${gameID}`;
   }
 
-  export async function createExchange(gameID: number, toUserEmail: string) {
-    await pg`INSERT INTO exchanges ("gameID", "toUserEmail")
-      VALUES (${gameID}, ${toUserEmail})
+  export async function createExchange(
+    gameID: number,
+    toUserEmail: string,
+    requestedGameID?: number,
+  ) {
+    await pg`INSERT INTO exchanges ("gameID", "toUserEmail", "requestedGameID")
+      VALUES (${gameID}, ${toUserEmail}, ${requestedGameID ?? null})
     `;
   }
 
   export async function getExchangeByID(
     gameID: number,
   ): Promise<GameExchange | null> {
-    const result = await pg`SELECT * FROM exchanges
+    const result = await pg`SELECT "toUserEmail", "requestedGameID"
+      FROM exchanges
       WHERE "gameID" = ${gameID}
     `;
 

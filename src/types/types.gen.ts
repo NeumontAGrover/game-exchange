@@ -140,6 +140,10 @@ export type GameExchange = {
      * The email of the user to exchange the game to
      */
     toUserEmail: string;
+    /**
+     * The ID of the game that is being requested in exchange
+     */
+    requestedGameID?: number;
 };
 
 /**
@@ -161,6 +165,13 @@ export type InvalidFieldError = {
  * An error that occurs from invalid access or invalid login
  */
 export type UnauthorizedError = {
+    message: string;
+};
+
+/**
+ * An error that occurs when authorization is valid but the action is not allowed
+ */
+export type ForbiddenError = {
     message: string;
 };
 
@@ -704,6 +715,10 @@ export type PostExchangeByIdErrors = {
      */
     401: UnauthorizedError;
     /**
+     * The receiver must own the requested game to exchange
+     */
+    403: ForbiddenError;
+    /**
      * Game not found
      */
     404: NotFoundError;
@@ -728,7 +743,7 @@ export type PostExchangeByIdResponses = {
 
 export type PostExchangeByIdResponse = PostExchangeByIdResponses[keyof PostExchangeByIdResponses];
 
-export type PostReceiveByIdData = {
+export type PostExchangeByIdAcceptData = {
     body?: never;
     headers: {
         /**
@@ -743,10 +758,10 @@ export type PostReceiveByIdData = {
         ID: number;
     };
     query?: never;
-    url: '/receive/{id}';
+    url: '/exchange/{id}/accept';
 };
 
-export type PostReceiveByIdErrors = {
+export type PostExchangeByIdAcceptErrors = {
     /**
      * User is not authorized to receive this game or has a missing or invalid token
      */
@@ -761,13 +776,57 @@ export type PostReceiveByIdErrors = {
     500: InternalServerError;
 };
 
-export type PostReceiveByIdError = PostReceiveByIdErrors[keyof PostReceiveByIdErrors];
+export type PostExchangeByIdAcceptError = PostExchangeByIdAcceptErrors[keyof PostExchangeByIdAcceptErrors];
 
-export type PostReceiveByIdResponses = {
+export type PostExchangeByIdAcceptResponses = {
     /**
      * Received Game
      */
     200: Game;
 };
 
-export type PostReceiveByIdResponse = PostReceiveByIdResponses[keyof PostReceiveByIdResponses];
+export type PostExchangeByIdAcceptResponse = PostExchangeByIdAcceptResponses[keyof PostExchangeByIdAcceptResponses];
+
+export type PostExchangeByIdDeclineData = {
+    body?: never;
+    headers: {
+        /**
+         * Bearer token for user authentication
+         */
+        Authorization: string;
+    };
+    path: {
+        /**
+         * The ID of a game
+         */
+        ID: number;
+    };
+    query?: never;
+    url: '/exchange/{id}/decline';
+};
+
+export type PostExchangeByIdDeclineErrors = {
+    /**
+     * User is not authorized to cancel this exchange or has a missing or invalid token
+     */
+    401: UnauthorizedError;
+    /**
+     * Game not found
+     */
+    404: NotFoundError;
+    /**
+     * Internal server error
+     */
+    500: InternalServerError;
+};
+
+export type PostExchangeByIdDeclineError = PostExchangeByIdDeclineErrors[keyof PostExchangeByIdDeclineErrors];
+
+export type PostExchangeByIdDeclineResponses = {
+    /**
+     * Cancelled Exchange
+     */
+    200: Game;
+};
+
+export type PostExchangeByIdDeclineResponse = PostExchangeByIdDeclineResponses[keyof PostExchangeByIdDeclineResponses];
