@@ -364,6 +364,7 @@ Bun.serve({
         try {
           await Postgres.createExchange(
             gameID,
+            userID,
             body.toUserEmail,
             body.requestedGameID,
           );
@@ -441,6 +442,8 @@ Bun.serve({
         }
 
         const userID = await Postgres.getUserIDFromToken(bearerToken);
+        if (!userID)
+          return Responses.notAuthorized("Missing or invalid bearer token");
 
         let exchange: GameExchange | null = null;
         try {
@@ -452,11 +455,14 @@ Bun.serve({
 
         if (!exchange) return Responses.notFoundError(gameID);
 
+        const fromUserID = exchange.fromUserID!;
+        if (fromUserID === 0) return Responses.notFoundError(fromUserID);
+
         const toUserID = await Postgres.getUserIDFromEmail(
           exchange.toUserEmail,
         );
         if (toUserID === 0) return Responses.notFoundError(toUserID);
-        else if (toUserID !== userID)
+        else if (toUserID === fromUserID || fromUserID === userID)
           return Responses.notAuthorized("User cannot receive this game");
 
         const game = await Postgres.getGameByID(gameID);
@@ -471,7 +477,7 @@ Bun.serve({
 
         if (requestedGame) {
           const ownsRequestedGame = await Auth.userOwnsGame(
-            userID,
+            toUserID,
             exchange.requestedGameID!,
           );
 
@@ -486,9 +492,12 @@ Bun.serve({
           console.info(`Game ${gameID} transferred to userID ${toUserID}`);
 
           if (exchange.requestedGameID) {
-            await Postgres.updateGameOwner(exchange.requestedGameID, userID);
+            await Postgres.updateGameOwner(
+              exchange.requestedGameID,
+              fromUserID,
+            );
             console.info(
-              `Game ${exchange.requestedGameID} transferred to userID ${userID}`,
+              `Game ${exchange.requestedGameID} transferred to userID ${fromUserID}`,
             );
           }
 
@@ -498,7 +507,7 @@ Bun.serve({
             `Error receiving game ${gameID} for userID ${toUserID}:`,
           );
           console.error(
-            `Error receiving game ${exchange.requestedGameID} for userID ${userID}:`,
+            `Error receiving game ${exchange.requestedGameID} for userID ${fromUserID}:`,
           );
           console.error(e);
           return Responses.internalServerError(
@@ -519,6 +528,8 @@ Bun.serve({
         }
 
         const userID = await Postgres.getUserIDFromToken(bearerToken);
+        if (!userID)
+          return Responses.notAuthorized("Missing or invalid bearer token");
 
         let exchange: GameExchange | null = null;
         try {
@@ -530,11 +541,14 @@ Bun.serve({
 
         if (!exchange) return Responses.notFoundError(gameID);
 
+        const fromUserID = exchange.fromUserID!;
+        if (fromUserID === 0) return Responses.notFoundError(fromUserID);
+
         const toUserID = await Postgres.getUserIDFromEmail(
           exchange.toUserEmail,
         );
         if (toUserID === 0) return Responses.notFoundError(toUserID);
-        else if (toUserID !== userID)
+        else if (toUserID === fromUserID || fromUserID === userID)
           return Responses.notAuthorized("User cannot receive this game");
 
         const game = await Postgres.getGameByID(gameID);

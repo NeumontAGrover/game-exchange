@@ -19,7 +19,7 @@ const pg = new SQL(
 export namespace Postgres {
   export async function createSchema() {
     await pg`CREATE TABLE IF NOT EXISTS users (
-      id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
+      id SMALLINT GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) PRIMARY KEY NOT NULL,
       name VARCHAR(50) NOT NULL,
       email VARCHAR(256) UNIQUE NOT NULL,
       password VARCHAR(60) NOT NULL,
@@ -27,7 +27,7 @@ export namespace Postgres {
     )`;
 
     await pg`CREATE TABLE IF NOT EXISTS games (
-      id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
+      id INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) PRIMARY KEY NOT NULL,
       name VARCHAR(50) NOT NULL,
       publisher VARCHAR(50) NOT NULL,
       year SMALLINT NOT NULL,
@@ -49,6 +49,7 @@ export namespace Postgres {
 
     await pg`CREATE TABLE IF NOT EXISTS exchanges (
       "gameID" INTEGER PRIMARY KEY REFERENCES games(id) NOT NULL,
+      "fromUserID" SMALLINT REFERENCES users(id) NOT NULL,
       "toUserEmail" VARCHAR(256) REFERENCES users(email) NOT NULL,
       "requestedGameID" INTEGER REFERENCES games(id) NULL
     )`;
@@ -255,18 +256,20 @@ export namespace Postgres {
 
   export async function createExchange(
     gameID: number,
+    fromUserID: number,
     toUserEmail: string,
     requestedGameID?: number,
   ) {
-    await pg`INSERT INTO exchanges ("gameID", "toUserEmail", "requestedGameID")
-      VALUES (${gameID}, ${toUserEmail}, ${requestedGameID ?? null})
+    await pg`INSERT INTO exchanges ("gameID", "fromUserID", "toUserEmail", "requestedGameID")
+      VALUES (${gameID}, ${fromUserID}, ${toUserEmail}, ${requestedGameID ?? null})
     `;
   }
 
   export async function getExchangeByID(
     gameID: number,
   ): Promise<GameExchange | null> {
-    const result = await pg`SELECT "toUserEmail", "requestedGameID"
+    const result = await pg`
+      SELECT "fromUserID", "toUserEmail", "requestedGameID"
       FROM exchanges
       WHERE "gameID" = ${gameID}
     `;

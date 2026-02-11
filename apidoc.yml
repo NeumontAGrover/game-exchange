@@ -160,6 +160,9 @@ components:
       required:
         - toUserEmail
       properties:
+        fromUserID:
+          description: The ID of the user that is sending the game up for exchange
+          type: integer
         toUserEmail:
           description: The email of the user to exchange the game to
           type: string

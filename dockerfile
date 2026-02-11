@@ -11,5 +11,5 @@ RUN addgroup -S gamesgroup
 RUN adduser -S retrouser -G gamesgroup
 USER retrouser
 
-CMD ["bun", "run", "dev"]
+CMD ["bun", "run", "dev", "--drop-schema"]
 EXPOSE 3000/tcp

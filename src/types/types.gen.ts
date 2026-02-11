@@ -137,6 +137,10 @@ export type GamePartial = {
  */
 export type GameExchange = {
     /**
+     * The ID of the user that is sending the game up for exchange
+     */
+    fromUserID?: number;
+    /**
      * The email of the user to exchange the game to
      */
     toUserEmail: string;
@@ -767,7 +771,7 @@ export type PostExchangeByIdAcceptErrors = {
      */
     401: UnauthorizedError;
     /**
-     * Game not found
+     * Game exchange not found
      */
     404: NotFoundError;
     /**
@@ -811,7 +815,7 @@ export type PostExchangeByIdDeclineErrors = {
      */
     401: UnauthorizedError;
     /**
-     * Game not found
+     * Game exchange not found
      */
     404: NotFoundError;
     /**

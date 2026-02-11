@@ -1499,7 +1499,7 @@ describe("accept endpoints", () => {
 
     test("post 404 (deleted)", async () => {
       await fetch(`http://localhost:${nginx.hostPort}/exchange/4`, {
-        method: "PUT",
+        method: "POST",
         headers: {
           Authorization: `Bearer ${userToken2}`,
         },
