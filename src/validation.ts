@@ -24,7 +24,7 @@ export namespace Validation {
 
   export function validateEmail(email: string): InvalidField | null {
     if (!email) return { key: "email", value: "undefined" };
-    const regex = /^(\w+(\.\w)?)+@(\w+(\.\w)?)+\.\w{2,4}$/gi;
+    const regex = /^(\w+(\.\w)?)+@(\w+(\.\w)?)+\.\w{2,5}$/gi;
     if (!regex.test(email)) return { key: "email", value: email };
     return null;
   }
@@ -87,6 +87,11 @@ export namespace Validation {
     if (user.streetAddress !== undefined) {
       const streetAddress = validateStreetAddress(user.streetAddress);
       if (streetAddress) return streetAddress;
+    }
+
+    if (user.password !== undefined) {
+      const password = validatePassword(user.password);
+      if (password) return password;
     }
 
     return null;

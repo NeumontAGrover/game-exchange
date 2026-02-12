@@ -35,6 +35,14 @@ export namespace Auth {
     return token;
   }
 
+  export async function updatePassword(
+    userID: number,
+    newPassword: string,
+  ): Promise<void> {
+    const hashedPassword = await hashPassword(newPassword);
+    await Postgres.updateUserPassword(userID, hashedPassword);
+  }
+
   export async function getBearerToken(
     authString: Bun.BunRequest,
   ): Promise<string | null> {

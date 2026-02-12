@@ -102,6 +102,15 @@ export namespace Postgres {
     await pg.unsafe(command);
   }
 
+  export async function updateUserPassword(
+    userID: number,
+    hashedPassword: string,
+  ) {
+    await pg`UPDATE users SET password = ${hashedPassword}
+      WHERE id = ${userID}
+    `;
+  }
+
   export async function getUserIDAndPasswordHash(
     email: string,
   ): Promise<{ id: number; password: string } | null> {

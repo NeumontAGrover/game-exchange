@@ -15,6 +15,7 @@ import type {
 import Auth from "./auth";
 import Validation from "./validation";
 import Responses from "./responses";
+import { KafkaService } from "./kafka";
 
 const server = config.server;
 
@@ -102,7 +103,7 @@ Bun.serve({
         } catch (e) {
           console.error(`Error registering user ${body.email}:`, e);
           return Responses.internalServerError(
-            "Error occurred while logging in the user",
+            "Error occurred while registering the user",
           );
         }
       },
@@ -128,6 +129,12 @@ Bun.serve({
 
         try {
           await Postgres.updateUserDetails(body, userID);
+          if (body.password) {
+            await Auth.updatePassword(userID, body.password);
+            const user = await Postgres.getUserFromID(userID);
+            await KafkaService.sendUpdatedPasswordEvent(user!.email!);
+          }
+
           console.info(`User details updated for userID ${userID}`);
           return Responses.userDetailsUpdated(body.name, body.streetAddress);
         } catch (e) {
@@ -368,6 +375,10 @@ Bun.serve({
             body.toUserEmail,
             body.requestedGameID,
           );
+
+          const user = await Postgres.getUserFromID(userID);
+          KafkaService.sendOfferCreatedEvent(user!.email!, body.toUserEmail);
+
           console.info(
             `Exchange created for game ${gameID} to userID ${toUserID}`,
           );
@@ -422,6 +433,14 @@ Bun.serve({
 
         try {
           await Postgres.deleteExchangeByID(gameID);
+
+          const user = await Postgres.getUserFromID(userID);
+          const exchange = await Postgres.getExchangeByID(gameID);
+          KafkaService.sendOfferRejectedEvent(
+            user!.email!,
+            exchange!.toUserEmail,
+          );
+
           console.info(`Exchange deleted for game ${gameID}`);
           return Response.json(game, { status: 200 });
         } catch (e) {
@@ -501,6 +520,12 @@ Bun.serve({
             );
           }
 
+          const fromUser = await Postgres.getUserFromID(fromUserID);
+          KafkaService.sendOfferAcceptedEvent(
+            fromUser!.email!,
+            exchange.toUserEmail,
+          );
+
           await Postgres.deleteExchangeByID(gameID);
         } catch (e) {
           console.error(
@@ -556,6 +581,12 @@ Bun.serve({
 
         try {
           await Postgres.deleteExchangeByID(gameID);
+
+          const fromUser = await Postgres.getUserFromID(fromUserID);
+          KafkaService.sendOfferRejectedEvent(
+            fromUser!.email!,
+            exchange.toUserEmail,
+          );
         } catch (e) {
           console.error(`Error declining exchange for game ${gameID}:`, e);
           return Responses.internalServerError(

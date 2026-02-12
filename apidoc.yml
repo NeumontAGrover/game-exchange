@@ -382,7 +382,7 @@ paths:
                 $ref: "#/components/schemas/InternalServerError"
     patch:
       summary: Update user info
-      description: name, and street address can be updated
+      description: name, password, and street address can be updated
       requestBody:
         required: true
         content:

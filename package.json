@@ -13,5 +13,8 @@
   "scripts": {
     "dev": "bun run ./src/index.ts",
     "openapi-ts": "openapi-ts -i apidoc.yml -o ./src/types"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4"
   }
 }
